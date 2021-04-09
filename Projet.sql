@@ -69,14 +69,14 @@ CREATE TABLE NETFLIX_FILMS_JN
     JN_ORACLE_USER VARCHAR2(30) NOT NULL,
     JN_DATETIME DATE DEFAULT SYSTIMESTAMP NOT NULL,
     FILM_ID NUMBER(4) NOT NULL,
-    OLD_TITRE VARCHAR2(100) NOT NULL,
-    NEW_TITRE VARCHAR2(100) NOT NULL,
-    OLD_ANNEE_SORTIE NUMBER(4) NOT NULL,
-    NEW_ANNEE_SORTIE NUMBER(4) NOT NULL,
-    OLD_DURAION NUMBER(4) NOT NULL,
-    NEW_DURAION NUMBER(4) NOT NULL,
-    OLD_DESCRIPTION VARCHAR2(4000) NOT NULL,
-    NEW_DESCRIPTION VARCHAR2(4000) NOT NULL
+    OLD_TITRE VARCHAR2(100),
+    NEW_TITRE VARCHAR2(100),
+    OLD_ANNEE_SORTIE NUMBER(4),
+    NEW_ANNEE_SORTIE NUMBER(4),
+    OLD_DURAION NUMBER(4),
+    NEW_DURAION NUMBER(4),
+    OLD_DESCRIPTION VARCHAR2(4000),
+    NEW_DESCRIPTION VARCHAR2(4000)
 );
 
 -- QUESTION
@@ -132,22 +132,130 @@ CREATE OR REPLACE TRIGGER NETFLIX_FILMS_TR1
     SELECT USER INTO JN_ORACLE_USER FROM dual;
       --Insert
       IF INSERTING THEN
-         INSERT INTO NETFLIX_FILMS_JN
-            VALUES ('I', JN_ORACLE_USER, SYSDATE,:NEW.FILM_ID,NULL,:NEW.TITRE,NULL, :NEW.ANNEE_SORTIE, NULL, 
-               :NEW.DURATION, NULL,:NEW.DESCRIPTION);
+         INSERT INTO NETFLIX_FILMS_JN (
+                JN_OPERATION,
+                JN_ORACLE_USER,
+                JN_DATETIME,
+                FILM_ID,
+                NEW_TITRE,
+                NEW_ANNEE_SORTIE,
+                NEW_DURAION,
+                NEW_DESCRIPTION
+            )
+            VALUES (
+                'I',
+                JN_ORACLE_USER,
+                SYSDATE,
+                :NEW.FILM_ID,
+                :NEW.TITRE,
+                :NEW.ANNEE_SORTIE, 
+                :NEW.DURATION,
+                :NEW.DESCRIPTION
+            );
    -- Delete
       ELSIF DELETING THEN
-         INSERT INTO NETFLIX_FILMS_JN
-            VALUES ('D', JN_ORACLE_USER, SYSDATE,:OLD.FILM_ID,:OLD.TITRE, NULL, :OLD.ANNEE_SORTIE, NULL,:OLD.DURATION, NULL,
-               :OLD.DESCRIPTION, NULL);
+         INSERT INTO NETFLIX_FILMS_JN (
+                JN_OPERATION,
+                JN_ORACLE_USER,
+                JN_DATETIME,
+                FILM_ID,
+                OLD_TITRE,
+                OLD_ANNEE_SORTIE,
+                OLD_DURAION,
+                OLD_DESCRIPTION
+        )
+        VALUES (
+                'D',
+                JN_ORACLE_USER,
+                SYSDATE,
+                :OLD.FILM_ID,
+                :OLD.TITRE,
+                :OLD.ANNEE_SORTIE,
+                :OLD.DURATION,
+                :OLD.DESCRIPTION
+            );
    -- Update
       ELSE
          INSERT INTO NETFLIX_FILMS_JN
-            VALUES ('U', JN_ORACLE_USER, SYSDATE,:NEW.FILM_ID,:OLD.TITRE, :NEW.TITRE, :OLD.ANNEE_SORTIE, :NEW.ANNEE_SORTIE, :OLD.DURATION,
-               :NEW.DURATION, :OLD.DESCRIPTION, :NEW.DESCRIPTION);
+            VALUES (
+                'U', 
+                JN_ORACLE_USER, 
+                SYSDATE,
+                :NEW.FILM_ID,
+                :OLD.TITRE, 
+                :NEW.TITRE, 
+                :OLD.ANNEE_SORTIE, 
+                :NEW.ANNEE_SORTIE, 
+                :OLD.DURATION,
+                :NEW.DURATION, 
+                :OLD.DESCRIPTION, 
+                :NEW.DESCRIPTION
+            );
 
       END IF;
 END;
+
+-- Insertion des donnees dans les tableaux NETFLIX_FILMS, NETFLIX_ACTEURS, NETFLIX_DIRECTEURS
+
+-- FILM #1
+INSERT INTO NETFLIX_FILMS (FILM_ID,TITRE,ANNEE_SORTIE, DURATION, DESCRIPTION) VALUES (NETFLIX_FILMS_SEQ.nextval,
+    'Philadelphia', 1993, 126,'Philadelphia attorney Andrew Beckett launches a wrongful termination suit 
+    against his law firm when they fire him because he''s gay and HIV-positive.');
+
+INSERT INTO NETFLIX_ACTEURS (ACTEUR_ID,SURNOM_ACTEUR,PRENOM_ACTEUR) VALUES (NETFLIX_ACTEURS_SEQ.nextval,'Hanks', 'Tom');
+INSERT INTO NETFLIX_ACTEURS (ACTEUR_ID,SURNOM_ACTEUR,PRENOM_ACTEUR) VALUES (NETFLIX_ACTEURS_SEQ.nextval,'Washington', 'Denzel');
+INSERT INTO NETFLIX_ACTEURS (ACTEUR_ID,SURNOM_ACTEUR,PRENOM_ACTEUR) VALUES (NETFLIX_ACTEURS_SEQ.nextval,'Robards', 'Jason');
+
+INSERT INTO NETFLIX_DIRECTEURS (DIRECTEUR_ID,SURNOM_DIRECTEUR,PRENOM_DIRCTEUR) VALUES (NETFLIX_DIRECTEURS_SEQ.nextval,'Demme','Jonathan');
+
+-- FILM #2
+INSERT INTO NETFLIX_FILMS (FILM_ID,TITRE,ANNEE_SORTIE, DURATION, DESCRIPTION) VALUES (NETFLIX_FILMS_SEQ.nextval,
+    'The Book of Eli', 2010, 118,'Determined to protect a sacred text that promises to save humanity, Eli goes
+        on a quest westward across the barren, postapocalyptic country.');
+
+INSERT INTO NETFLIX_ACTEURS (ACTEUR_ID,SURNOM_ACTEUR,PRENOM_ACTEUR) VALUES (NETFLIX_ACTEURS_SEQ.nextval,'Washington', 'Denzel');
+INSERT INTO NETFLIX_ACTEURS (ACTEUR_ID,SURNOM_ACTEUR,PRENOM_ACTEUR) VALUES (NETFLIX_ACTEURS_SEQ.nextval,'Oldman', 'Gary');
+INSERT INTO NETFLIX_ACTEURS (ACTEUR_ID,SURNOM_ACTEUR,PRENOM_ACTEUR) VALUES (NETFLIX_ACTEURS_SEQ.nextval,'Kunis', 'Mila');
+
+INSERT INTO NETFLIX_DIRECTEURS (DIRECTEUR_ID,SURNOM_DIRECTEUR,PRENOM_DIRCTEUR) VALUES (NETFLIX_DIRECTEURS_SEQ.nextval,'Demme','Jonathan');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
