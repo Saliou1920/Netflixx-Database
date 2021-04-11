@@ -279,6 +279,117 @@ INSERT INTO NETFLIX_ACTEURS (ACTEUR_ID,SURNOM_ACTEUR,PRENOM_ACTEUR) VALUES (NETF
 
 INSERT INTO NETFLIX_DIRECTEURS (DIRECTEUR_ID,SURNOM_DIRECTEUR,PRENOM_DIRECTEUR) VALUES (NETFLIX_DIRECTEURS_SEQ.nextval,'Luketic','Robert');
 
+-- Section D - Paquetage
+
+CREATE OR REPLACE PACKAGE NETFLIX_PKG AS 
+   -- Inserer un nouveau film  
+   PROCEDURE InsertFilm(
+    film NETFLIX_FILMS.TITRE%type, 
+    sortie  NETFLIX_FILMS.ANNEE_SORTIE%type, 
+    duration  NETFLIX_FILMS.DURATION%type, 
+    description NETFLIX_FILMS.DESCRIPTION%type
+    ); 
+   
+   -- Inserer une nouvelle actrice ou acteur 
+   PROCEDURE InsertActeur(
+    --acteur_id  NETFLIX_ACTEURS.ACTEUR_ID%type,
+    surnom NETFLIX_ACTEURS.SUURNOM_ACTEUR%type, 
+    prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type
+    ); 
+
+    -- Inserer une nouvelle directrice ou actrice 
+   PROCEDURE InsertDirecteur(
+    --directeur_id  NETFLIX_DIRECTEURS.DIRECTEUR_ID%type,
+    surnom NETFLIX_DIRECTEURS.SURNOM_DIRECTEUR%type, 
+    prenom  NETFLIX_DIRECTEURS.PRENOM_DIRECTEUR%type
+    );
+
+    -- Inserer une nouvelle actrice ou acteur 
+   PROCEDURE ActeurFilm(
+    surnom NETFLIX_ACTEURS_REF.SUURNOM_ACTEUR%type, 
+    prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type,
+    film NETFLIX_FILMS.TITRE%type
+    ); 
+
+     -- Inserer une nouvelle directrice ou directeur 
+   PROCEDURE DirecteurFilm(
+    surnom NETFLIX_ACTEURS_REF.SUURNOM_ACTEUR%type, 
+    prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type,
+    film NETFLIX_FILMS.TITRE%type
+    );
+
+     -- Inserer une nouvelle actrice ou acteur 
+   PROCEDURE DetailsFilm(
+    film NETFLIX_FILMS.TITRE%type
+    );
+    -- Supprimer un film
+    PROCEDURE DeleteFilm(
+    film NETFLIX_FILMS.TITRE%type
+    );
+   
+  
+END NETFLIX_PKG; 
+
+-- Creer le package body
+
+CREATE OR REPLACE PACKAGE BODY NETFLIX_PKG AS
+    PROCEDURE InsertFilm(
+        film NETFLIX_FILMS.TITRE%type, 
+        sortie  NETFLIX_FILMS.ANNEE_SORTIE%type, 
+        duration  NETFLIX_FILMS.DURATION%type, 
+        description NETFLIX_FILMS.DESCRIPTION%type)
+    IS 
+    BEGIN
+        SELECT TITRE FROM NETFLIX_FILMS
+        WHERE TITRE = film;
+
+        IF SQL%NOTFOUND THEN
+            INSERT INTO NETFLIX_FILMS (FILM_ID,TITRE,ANNEE_SORTIE, DURATION, DESCRIPTION) 
+                VALUES (NETFLIX_FILMS_SEQ.nextval, film, sortie, duration, description);
+            DBMS_OUTPUT.PUT_LINE ('Film : ' || film || ' ajoute!');
+        ELSE
+            RAISE NO_DATA_FOUND;
+        END IF;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            DBMS_OUTPUT.PUT_LINE ('Ce film existe deja dans le tableau!');
+        WHEN OTHERS THEN
+            raise_application_error(-20001,'ERREUR TROUVE - '||SQLCODE||' -ERREUR- '||SQLERRM);
+    END InsertFilm;
+
+
+    -- Inserer une nouvelle actrice ou acteur 
+   PROCEDURE InsertActeur(
+    surnom NETFLIX_ACTEURS.SUURNOM_ACTEUR%type, 
+    prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type)
+    IS 
+    BEGIN
+        SELECT SURNOM_ACTEUR FROM NETFLIX_ACTEURS
+        WHERE SURNOM_ACTEUR = surnom AND PRENOM_ACTEUR = prenom;
+
+        IF SQL%NOTFOUND THEN
+            INSERT INTO NETFLIX_ACTEURS (ACTEUR_ID,SURNOM_ACTEUR,PRENOM_ACTEUR) 
+                VALUES (NETFLIX_ACTEURS_SEQ.nextval, surnom, prenom);
+            DBMS_OUTPUT.PUT_LINE ('Acteur ou actrice : ' || prenom || ' ' || surnom || 'ajoute!');
+        ELSE
+            RAISE NO_DATA_FOUND;
+        END IF;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            DBMS_OUTPUT.PUT_LINE ('Cet acteur existe deja dans le tableau!');
+        WHEN OTHERS THEN
+            raise_application_error(-20001,'ERREUR TROUVE - '||SQLCODE||' -ERREUR- '||SQLERRM);
+    END InsertActeur; 
+END NETFLIX_PKG;
+
+
+
+
+
+
+
+
+
 SELECT * FROM NETFLIX_FILMS;
 SELECT * FROM NETFLIX_ACTEURS;
 SELECT * FROM NETFLIX_DIRECTEURS;
