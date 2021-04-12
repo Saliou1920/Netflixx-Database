@@ -93,6 +93,9 @@ CREATE TABLE NETFLIX_DIRECTEURS_REF
     CONSTRAINT NETFLIX_DIRECTEURS_REF_PK PRIMARY KEY (DIRECTEUR_ID, FILM_ID),
     FOREIGN KEY (DIRECTEUR_ID) REFERENCES NETFLIX_DIRECTEURS(DIRECTEUR_ID),
     FOREIGN KEY (FILM_ID) REFERENCES NETFLIX_FILMS(FILM_ID)
+     -- Si une ligne est supprime dans le taleau parent, elle sera supprimee automatiquement dans
+    -- le tabeau NETFLIX_DIRECTEURS_REF
+    ON DELETE CASCADE
 );
 
 -- table de référence qui servira à enregistrer les acteurs de chaque film.
@@ -105,6 +108,9 @@ CREATE TABLE NETFLIX_ACTEURS_REF
     CONSTRAINT NETFLIX_ACTEURS_REF_PK PRIMARY KEY (ACTEUR_ID, FILM_ID),
     FOREIGN KEY (ACTEUR_ID) REFERENCES NETFLIX_ACTEURS(ACTEUR_ID),
     FOREIGN KEY (FILM_ID) REFERENCES NETFLIX_FILMS(FILM_ID)
+    -- Si une ligne est supprime dans le taleau parent, elle sera supprimee automatiquement dans
+    -- le tabeau NETFLIX_ACTEURS_REF
+    ON DELETE CASCADE
 );
 
 -- Vue
@@ -306,7 +312,7 @@ CREATE OR REPLACE PACKAGE NETFLIX_PKG AS
 
     -- Inserer une nouvelle actrice ou acteur 
    PROCEDURE ActeurFilm(
-    surnom NETFLIX_ACTEURS_REF.SUURNOM_ACTEUR%type, 
+    surnom NETFLIX_ACTEURS.SUURNOM_ACTEUR%type, 
     prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type,
     film NETFLIX_FILMS.TITRE%type
     ); 
@@ -348,10 +354,10 @@ CREATE OR REPLACE PACKAGE BODY NETFLIX_PKG AS
                 VALUES (NETFLIX_FILMS_SEQ.nextval, film, sortie, duration, description);
             DBMS_OUTPUT.PUT_LINE ('Film : ' || film || ' ajoute!');
         ELSE
-            RAISE NO_DATA_FOUND;
+            RAISE data_found;
         END IF;
     EXCEPTION
-        WHEN NO_DATA_FOUND THEN
+        WHEN data_found THEN
             DBMS_OUTPUT.PUT_LINE ('Ce film existe deja dans le tableau!');
         WHEN OTHERS THEN
             raise_application_error(-20001,'ERREUR TROUVE - '||SQLCODE||' -ERREUR- '||SQLERRM);
@@ -372,19 +378,142 @@ CREATE OR REPLACE PACKAGE BODY NETFLIX_PKG AS
                 VALUES (NETFLIX_ACTEURS_SEQ.nextval, surnom, prenom);
             DBMS_OUTPUT.PUT_LINE ('Acteur ou actrice : ' || prenom || ' ' || surnom || 'ajoute!');
         ELSE
-            RAISE NO_DATA_FOUND;
+            RAISE data_found;
         END IF;
     EXCEPTION
-        WHEN NO_DATA_FOUND THEN
+        WHEN data_found THEN
             DBMS_OUTPUT.PUT_LINE ('Cet acteur existe deja dans le tableau!');
         WHEN OTHERS THEN
             raise_application_error(-20001,'ERREUR TROUVE - '||SQLCODE||' -ERREUR- '||SQLERRM);
-    END InsertActeur; 
+    END InsertActeur;
+
+      -- Inserer une nouvelle directrice ou actrice 
+   PROCEDURE InsertDirecteur(
+    --directeur_id  NETFLIX_DIRECTEURS.DIRECTEUR_ID%type,
+    surnom NETFLIX_DIRECTEURS.SURNOM_DIRECTEUR%type, 
+    prenom  NETFLIX_DIRECTEURS.PRENOM_DIRECTEUR%type)
+    IS 
+    BEGIN
+        SELECT SURNOM_DIRECTEUR FROM NETFLIX_DIRECTEURS
+        WHERE SURNOM_DIRECTEUR = surnom AND PRENOM_DIRECTEUR = prenom;
+
+        IF SQL%NOTFOUND THEN
+            INSERT INTO NETFLIX_DIRECTEURS(DIRECTEUR_ID,SURNOM_DIRECTEUR,PRENOM_DIRECTEUR) 
+                VALUES (NETFLIX_DIRECTEURS_SEQ.nextval, surnom, prenom);
+            DBMS_OUTPUT.PUT_LINE ('Directeur ou Directrice : ' || prenom || ' ' || surnom || 'ajoute!');
+        ELSE
+            RAISE data_found;
+        END IF;
+    EXCEPTION
+        WHEN data_found THEN
+            DBMS_OUTPUT.PUT_LINE ('Ce directeur ou directrice existe deja dans le tableau!');
+        WHEN OTHERS THEN
+            raise_application_error(-20001,'ERREUR TROUVE - '||SQLCODE||' -ERREUR- '||SQLERRM);
+    END InserDirecteur;
+
+    -- Inserer une nouvelle actrice ou acteur 
+   PROCEDURE ActeurFilm(
+    surnom NETFLIX_ACTEURS.SUURNOM_ACTEUR%type, 
+    prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type,
+    film NETFLIX_FILMS.TITRE%type
+    ) IS
+        acteurId NETFLIX_ACTEURS.ACTEUR_ID%type;
+        filmID  NETFLIX_FILMS.FILM_ID%type;
+    BEGIN
+        SELECT ACTEUR_ID INTO acteurId
+        FROM NETFLIX_ACTEURS
+        WHERE SURNOM_ACTEUR = surnom AND PRENOM_ACTEUR = prenom;
+
+        SELECT FILM_ID INTO filmId
+        FROM NETFLIX_FILMS
+        WHERE TITRE = film;
+        IF SQL%NOTFOUND THEN
+            RAISE data_found;
+        ELSE
+            INSERT INTO NETFLIX_ACTEURS_REF(ACTEUR_ID, FILM_ID) VALUES (acteurId, filmId);
+            DBMS_OUTPUT.PUT_LINE ('Film : ' || film || ' Acteur ' || surnom || 'ajoute!');
+            
+        END IF;
+    EXCEPTION
+        WHEN data_found THEN
+            DBMS_OUTPUT.PUT_LINE ('Ce film existe deja dans le tableau!');
+        WHEN OTHERS THEN
+            raise_application_error(-20001,'ERREUR TROUVE - '||SQLCODE||' -ERREUR- '||SQLERRM);
+    END ActeurFilm;
+
+    -- Inserer une nouvelle directrice ou directeur 
+   PROCEDURE DirecteurFilm(
+    surnom NETFLIX_ACTEURS_REF.SUURNOM_ACTEUR%type, 
+    prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type,
+    film NETFLIX_FILMS.TITRE%type
+    )  IS
+        directeurId NETFLIX_DIRECTEURS.DIRECTEUR_ID%type;
+        filmID  NETFLIX_FILMS.FILM_ID%type;
+    BEGIN
+        SELECT DIRECTEUR_ID INTO directeurId
+        FROM NETFLIX_DIRECTEURS
+        WHERE SURNOM_DIRECTEUR = surnom AND PRENOM_DIRECTEUR = prenom;
+
+        SELECT FILM_ID INTO filmId
+        FROM NETFLIX_FILMS
+        WHERE TITRE = film;
+        IF SQL%NOTFOUND THEN
+            RAISE data_found;
+        ELSE
+            INSERT INTO NETFLIX_DIRECTEURS_REF(DIRECTEUR_ID, FILM_ID) VALUES (directeurId, filmId);
+            DBMS_OUTPUT.PUT_LINE ('Film : ' || film || ' Directeur ' || surnom || 'ajoute!');
+            
+        END IF;
+    EXCEPTION
+        WHEN data_found THEN
+            DBMS_OUTPUT.PUT_LINE ('Ce film existe deja dans le tableau!');
+        WHEN OTHERS THEN
+            raise_application_error(-20001,'ERREUR TROUVE - '||SQLCODE||' -ERREUR- '||SQLERRM);
+    END DirecteurFilm;
+
+    -- Inserer une nouvelle actrice ou acteur 
+   PROCEDURE DetailsFilm(
+    film NETFLIX_FILMS.TITRE%type
+    )  IS
+        CURSOR Details IS
+            SELECT 
+                DESCRIPTION, 
+                SURNOM_DIRECTEUR, 
+                PRENOM_DIRECTEUR, 
+                SURNOM_ACTEUR, 
+                PRENOM_ACTEUR
+            FROM NETFLIX_FILMS a
+            INNER JOIN NETFLIX_ACTEURS_REF d ON d.FILM_ID = a.FILM_ID
+            INNER JOIN NETFLIX_ACTEURS c ON d.ACTEUR_ID = c.ACTEUR_ID
+            INNER JOIN NETFLIX_DIRECTEURS_REF e ON a.FILM_ID = e.FILM_ID
+            INNER JOIN NETFLIX_DIRECTEURS b ON e.DIRECTEUR_ID = b.DIRECTEUR_ID 
+            WHERE TITRE = film; 
+    BEGIN
+        OPEN Details;
+        FOR d IN Details
+        LOOP
+          DBMS_OUTPUT.PUT_LINE ('directeur ' || d.PRENOM_DIRECTEUR || d.SURNOM_DIRECTEUR ||
+            ' Acteur : '|| d.SURNOM_ACTEUR || d.PRENOM_ACTEUR || d.DESCRIPTION);
+        END LOOP;
+        CLOSE Details;
+
+    EXCEPTION
+        WHEN OTHERS THEN
+            raise_application_error(-20001,'ERREUR TROUVE - '||SQLCODE||' -ERREUR- '||SQLERRM);
+    END DetailsFilm;
+
+        -- Supprimer un film
+    PROCEDURE DeleteFilm(
+    film NETFLIX_FILMS.TITRE%type
+    ) IS 
+    BEGIN
+        DELETE FROM NETFLIX_FILMS
+        WHERE TITRE = film;
+        -- les valeurs correspondantes dans les tables de références 
+        -- (NETFLIX_DIRECTEURS_REF et NETFLIX_ACTEURS_REF) SERONT SUPPRIMEES AUTOMATIQUEMENT
+        -- AVEC LE ON DELETE CASCADE dans les tables de références
+    END DeleteFilm;
 END NETFLIX_PKG;
-
-
-
-
 
 
 
