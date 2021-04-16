@@ -151,7 +151,7 @@ CREATE OR REPLACE TRIGGER NETFLIX_FILMS_TR1
             VALUES (
                 'I',
                 JN_ORACLE_USER,
-                SYSDATE,
+                TO_CHAR(SYSDATE, 'DD-MM-YYYY'),
                 :NEW.FILM_ID,
                 :NEW.TITRE,
                 :NEW.ANNEE_SORTIE, 
@@ -173,7 +173,7 @@ CREATE OR REPLACE TRIGGER NETFLIX_FILMS_TR1
         VALUES (
                 'D',
                 JN_ORACLE_USER,
-                SYSDATE,
+                TO_CHAR(SYSDATE, 'DD-MM-YYYY'),
                 :OLD.FILM_ID,
                 :OLD.TITRE,
                 :OLD.ANNEE_SORTIE,
@@ -186,7 +186,7 @@ CREATE OR REPLACE TRIGGER NETFLIX_FILMS_TR1
             VALUES (
                 'U', 
                 JN_ORACLE_USER, 
-                SYSDATE,
+                TO_CHAR(SYSDATE, 'DD-MM-YYYY'),
                 :NEW.FILM_ID,
                 :OLD.TITRE, 
                 :NEW.TITRE, 
@@ -299,7 +299,7 @@ CREATE OR REPLACE PACKAGE NETFLIX_PKG AS
    -- Inserer une nouvelle actrice ou acteur 
    PROCEDURE InsertActeur(
     --acteur_id  NETFLIX_ACTEURS.ACTEUR_ID%type,
-    surnom NETFLIX_ACTEURS.SUURNOM_ACTEUR%type, 
+    surnom NETFLIX_ACTEURS.SURNOM_ACTEUR%type, 
     prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type
     ); 
 
@@ -312,14 +312,14 @@ CREATE OR REPLACE PACKAGE NETFLIX_PKG AS
 
     -- Inserer une nouvelle actrice ou acteur 
    PROCEDURE ActeurFilm(
-    surnom NETFLIX_ACTEURS.SUURNOM_ACTEUR%type, 
+    surnom NETFLIX_ACTEURS.SURNOM_ACTEUR%type, 
     prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type,
     film NETFLIX_FILMS.TITRE%type
     ); 
 
      -- Inserer une nouvelle directrice ou directeur 
    PROCEDURE DirecteurFilm(
-    surnom NETFLIX_ACTEURS_REF.SUURNOM_ACTEUR%type, 
+    surnom NETFLIX_ACTEURS.SURNOM_ACTEUR%type, 
     prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type,
     film NETFLIX_FILMS.TITRE%type
     );
@@ -339,15 +339,17 @@ END NETFLIX_PKG;
 -- Creer le package body
 
 CREATE OR REPLACE PACKAGE BODY NETFLIX_PKG AS
+    data_found EXCEPTION;
     PROCEDURE InsertFilm(
         film NETFLIX_FILMS.TITRE%type, 
         sortie  NETFLIX_FILMS.ANNEE_SORTIE%type, 
         duration  NETFLIX_FILMS.DURATION%type, 
         description NETFLIX_FILMS.DESCRIPTION%type)
-    IS 
+    IS
+        titre NETFLIX_FILMS.TITRE%type; 
     BEGIN
-        SELECT TITRE FROM NETFLIX_FILMS
-        WHERE TITRE = film;
+        SELECT TITRE INTO titre FROM NETFLIX_FILMS
+        WHERE titre = film;
 
         IF SQL%NOTFOUND THEN
             INSERT INTO NETFLIX_FILMS (FILM_ID,TITRE,ANNEE_SORTIE, DURATION, DESCRIPTION) 
@@ -366,12 +368,15 @@ CREATE OR REPLACE PACKAGE BODY NETFLIX_PKG AS
 
     -- Inserer une nouvelle actrice ou acteur 
    PROCEDURE InsertActeur(
-    surnom NETFLIX_ACTEURS.SUURNOM_ACTEUR%type, 
+    surnom NETFLIX_ACTEURS.SURNOM_ACTEUR%type, 
     prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type)
-    IS 
+    IS
+        surnom_acteur NETFLIX_ACTEURS.SURNOM_ACTEUR%type;
+        prenom_acteur NETFLIX_ACTEURS.SURNOM_ACTEUR%type; 
     BEGIN
-        SELECT SURNOM_ACTEUR FROM NETFLIX_ACTEURS
-        WHERE SURNOM_ACTEUR = surnom AND PRENOM_ACTEUR = prenom;
+        SELECT SURNOM_ACTEUR, PRENOM_ACTEUR  INTO surnom_acteur, prenom_acteur 
+        FROM NETFLIX_ACTEURS
+        WHERE surnom_acteur = surnom AND prenom_acteur  = prenom;
 
         IF SQL%NOTFOUND THEN
             INSERT INTO NETFLIX_ACTEURS (ACTEUR_ID,SURNOM_ACTEUR,PRENOM_ACTEUR) 
@@ -390,12 +395,15 @@ CREATE OR REPLACE PACKAGE BODY NETFLIX_PKG AS
       -- Inserer une nouvelle directrice ou actrice 
    PROCEDURE InsertDirecteur(
     --directeur_id  NETFLIX_DIRECTEURS.DIRECTEUR_ID%type,
-    surnom NETFLIX_DIRECTEURS.SURNOM_DIRECTEUR%type, 
-    prenom  NETFLIX_DIRECTEURS.PRENOM_DIRECTEUR%type)
-    IS 
+        surnom NETFLIX_DIRECTEURS.SURNOM_DIRECTEUR%type, 
+        prenom  NETFLIX_DIRECTEURS.PRENOM_DIRECTEUR%type)
+    IS
+        surnom_directeur NETFLIX_DIRECTEURS.SURNOM_DIRECTEUR%type;
+        prenom_directeur NETFLIX_DIRECTEURS.PRENOM_DIRECTEUR%type;
     BEGIN
-        SELECT SURNOM_DIRECTEUR FROM NETFLIX_DIRECTEURS
-        WHERE SURNOM_DIRECTEUR = surnom AND PRENOM_DIRECTEUR = prenom;
+        SELECT SURNOM_DIRECTEUR, PRENOM_DIRECTEUR INTO surnom_directeur, prenom_directeur 
+        FROM NETFLIX_DIRECTEURS
+        WHERE surnom_directeur= surnom AND prenom_directeur = prenom;
 
         IF SQL%NOTFOUND THEN
             INSERT INTO NETFLIX_DIRECTEURS(DIRECTEUR_ID,SURNOM_DIRECTEUR,PRENOM_DIRECTEUR) 
@@ -409,11 +417,11 @@ CREATE OR REPLACE PACKAGE BODY NETFLIX_PKG AS
             DBMS_OUTPUT.PUT_LINE ('Ce directeur ou directrice existe deja dans le tableau!');
         WHEN OTHERS THEN
             raise_application_error(-20001,'ERREUR TROUVE - '||SQLCODE||' -ERREUR- '||SQLERRM);
-    END InserDirecteur;
+    END InsertDirecteur;
 
     -- Inserer une nouvelle actrice ou acteur 
    PROCEDURE ActeurFilm(
-    surnom NETFLIX_ACTEURS.SUURNOM_ACTEUR%type, 
+    surnom NETFLIX_ACTEURS.SURNOM_ACTEUR%type, 
     prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type,
     film NETFLIX_FILMS.TITRE%type
     ) IS
@@ -443,7 +451,7 @@ CREATE OR REPLACE PACKAGE BODY NETFLIX_PKG AS
 
     -- Inserer une nouvelle directrice ou directeur 
    PROCEDURE DirecteurFilm(
-    surnom NETFLIX_ACTEURS_REF.SUURNOM_ACTEUR%type, 
+    surnom NETFLIX_ACTEURS.SURNOM_ACTEUR%type, 
     prenom  NETFLIX_ACTEURS.PRENOM_ACTEUR%type,
     film NETFLIX_FILMS.TITRE%type
     )  IS
@@ -515,8 +523,15 @@ CREATE OR REPLACE PACKAGE BODY NETFLIX_PKG AS
     END DeleteFilm;
 END NETFLIX_PKG;
 
+-- Section E
+-- permissions pour chaque table
+GRANT SELECT ANY TABLE, INSERT ANY TABLE, UPDATE ANY TABLE, DELETE ANY TABLE TO CHANTALE;
+-- permission pour chaque sewuence 
+GRANT SELECT ANY SEQUENCE TO CHANTALE;
+--Permission pour chaque view
+GRANT SELECT ON NETFLIX_DETAILS_V1 TO CHANTALE;
 
-
+GRANT EXECUTE ANY PROCEDURE TO CHANTALE;
 
 
 SELECT * FROM NETFLIX_FILMS;
