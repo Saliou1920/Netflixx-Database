@@ -79,11 +79,6 @@ CREATE TABLE NETFLIX_FILMS_JN
     NEW_DESCRIPTION VARCHAR2(4000)
 );
 
--- QUESTION
-
--- OUI on doit mettre une cle primaire sur la table journaliere
--- Parce que cela peut aider lors de la restauration des donnes
-
 -- Table reference qui servira a enregistrer le directeur de chaque film
 CREATE TABLE NETFLIX_DIRECTEURS_REF 
 (
